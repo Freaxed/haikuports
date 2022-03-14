@@ -1,0 +1,125 @@
+From 0b4654d760f8cf613fc924d082949cb7243d9cb7 Mon Sep 17 00:00:00 2001
+From: Andrea Anzani <andrea.anzani@gmail.com>
+Date: Mon, 14 Mar 2022 17:47:00 +0100
+Subject: bug fixes
+
+
+diff --git a/Source/DSPCode/rosic_MipMappedWaveTable.cpp b/Source/DSPCode/rosic_MipMappedWaveTable.cpp
+index dcaeda6..07cf71a 100644
+--- a/Source/DSPCode/rosic_MipMappedWaveTable.cpp
++++ b/Source/DSPCode/rosic_MipMappedWaveTable.cpp
+@@ -66,7 +66,7 @@ void MipMappedWaveTable::setSymmetry(double newSymmetry)
+ 
+ void MipMappedWaveTable::initPrototypeTable()
+ {
+-  for(int i=0; i<(tableLength+4); i++)
++  for(int i=0; i<tableLength; i++)
+     prototypeTable[i] = 0.0;
+ }
+ 
+diff --git a/Source/VSTPlugIn/Open303VST.cpp b/Source/VSTPlugIn/Open303VST.cpp
+index e6804cf..0129d5e 100644
+--- a/Source/VSTPlugIn/Open303VST.cpp
++++ b/Source/VSTPlugIn/Open303VST.cpp
+@@ -521,7 +521,7 @@ void Open303VST::handleEvent(VstMidiEvent midiEvent)
+ 
+ void Open303VST::noteOn(VstInt32 note, VstInt32 velocity, VstInt32 delta)
+ {
+-  open303Core.noteOn(note, velocity, 0.0);
++  open303Core.noteOn(note, velocity);
+ }
+ 
+ double Open303VST::convertToPitch(unsigned char highByte,unsigned char lowByte)
+-- 
+2.30.2
+
+
+From ad5958989082a6f7c661567b996d82c9977503a3 Mon Sep 17 00:00:00 2001
+From: Andrea Anzani <andrea.anzani@gmail.com>
+Date: Mon, 14 Mar 2022 17:47:35 +0100
+Subject: fixes flet it compile on haiku
+
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9565146..fa1f2aa 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,45 +1,31 @@
+ cmake_minimum_required(VERSION 3.6.3 FATAL_ERROR)
+ project(open303)
+ 
+-add_library(open303
+-     Source/DSPCode/GlobalDefinitions.h
+-     Source/DSPCode/GlobalFunctions.cpp
+-     Source/DSPCode/GlobalFunctions.h
+-     Source/DSPCode/fft4g.c
++include_directories(public.sdk/source/h .)
++
++add_library(open303 SHARED
++	 haikumain.cpp
++     Source/VSTPlugIn/Open303VST.cpp
++     Source/VSTPlugIn/StringConversions.c
++     public.sdk/source/vst2.x/vstplugmain.cpp
++     public.sdk/source/vst2.x/audioeffect.cpp
++     public.sdk/source/vst2.x/audioeffectx.cpp
+      Source/DSPCode/rosic_AcidPattern.cpp
+-     Source/DSPCode/rosic_AcidPattern.h
+      Source/DSPCode/rosic_AcidSequencer.cpp
+-     Source/DSPCode/rosic_AcidSequencer.h
+      Source/DSPCode/rosic_AnalogEnvelope.cpp
+-     Source/DSPCode/rosic_AnalogEnvelope.h
+      Source/DSPCode/rosic_BiquadFilter.cpp
+-     Source/DSPCode/rosic_BiquadFilter.h
+      Source/DSPCode/rosic_BlendOscillator.cpp
+-     Source/DSPCode/rosic_BlendOscillator.h
+      Source/DSPCode/rosic_Complex.cpp
+-     Source/DSPCode/rosic_Complex.h
+      Source/DSPCode/rosic_DecayEnvelope.cpp
+-     Source/DSPCode/rosic_DecayEnvelope.h
+      Source/DSPCode/rosic_EllipticQuarterBandFilter.cpp
+-     Source/DSPCode/rosic_EllipticQuarterBandFilter.h
+      Source/DSPCode/rosic_FourierTransformerRadix2.cpp
+-     Source/DSPCode/rosic_FourierTransformerRadix2.h
+      Source/DSPCode/rosic_FunctionTemplates.cpp
+-     Source/DSPCode/rosic_FunctionTemplates.h
+      Source/DSPCode/rosic_LeakyIntegrator.cpp
+-     Source/DSPCode/rosic_LeakyIntegrator.h
+      Source/DSPCode/rosic_MidiNoteEvent.cpp
+-     Source/DSPCode/rosic_MidiNoteEvent.h
+      Source/DSPCode/rosic_MipMappedWaveTable.cpp
+-     Source/DSPCode/rosic_MipMappedWaveTable.h
+      Source/DSPCode/rosic_NumberManipulations.cpp
+-     Source/DSPCode/rosic_NumberManipulations.h
+      Source/DSPCode/rosic_OnePoleFilter.cpp
+-     Source/DSPCode/rosic_OnePoleFilter.h
+      Source/DSPCode/rosic_Open303.cpp
+-     Source/DSPCode/rosic_Open303.h
+      Source/DSPCode/rosic_RealFunctions.cpp
+-     Source/DSPCode/rosic_RealFunctions.h
+      Source/DSPCode/rosic_TeeBeeFilter.cpp
+-     Source/DSPCode/rosic_TeeBeeFilter.h    
+ )
+diff --git a/haikumain.cpp b/haikumain.cpp
+new file mode 100644
+index 0000000..0958d7e
+--- /dev/null
++++ b/haikumain.cpp
+@@ -0,0 +1,15 @@
++// adds "main" to the exported symbols
++
++#include "public.sdk/source/h/aeffectx.h"	// Version 2.x 'C' Extensions and Structures
++
++extern "C"
++{
++    extern AEffect * VSTPluginMain(audioMasterCallback audioMaster);
++    extern "C" __declspec(dllexport) AEffect * main_plugin (audioMasterCallback audioMaster);
++#define main main_plugin
++    AEffect * main(audioMasterCallback audioMaster)
++    {
++        return VSTPluginMain(audioMaster);
++    }
++}
++
+-- 
+2.30.2
+

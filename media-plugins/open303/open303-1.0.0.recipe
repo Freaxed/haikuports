@@ -1,0 +1,54 @@
+SUMMARY="VST plugin emulating the famous Roland TB-303 bass synthesizer"
+DESCRIPTION="It currently consists of a generic and platform-independent C++ implementation of the DSP algorithms as well as a GUI-less plugin for the VST v2.4 interface."
+HOMEPAGE="https://github.com/maddanio/open303"
+COPYRIGHT="Robin Schmidt"
+LICENSE="MIT"
+REVISION="1"
+
+srcGitRev="52f8614966cde2c1fd9d76369cf9d07e766262ed"
+SOURCE_URI="$HOMEPAGE/archive/$srcGitRev.tar.gz"
+CHECKSUM_SHA256="5d0e79fcc13fa453afde58c9bf9ccfbf39bf372f27efad6cc08286ec3ff94660"
+SOURCE_DIR="open303-$srcGitRev"
+
+srcGitRev2="1f1ad1ae5d29471419ab31bcfcbe84397d944f8a"
+SOURCE_URI_2="https://github.com/kxproject/kx-audio-driver/archive/$srcGitRev2.zip"
+CHECKSUM_SHA256_2="d8f1b019b3099e57e8756a80ae588dd608ca2b9b1f0e121d7f1329fc75bad881"
+SOURCE_DIR_2="kx-audio-driver-$srcGitRev2/vst"
+PATCHES="open303-$portVersion.patchset"
+
+
+ARCHITECTURES="all"
+SECONDARY_ARCHITECTURES="x86"
+
+PROVIDES="
+	open303$secondaryArchSuffix = $portVersion
+	"
+REQUIRES="
+	haiku$secondaryArchSuffix
+	"
+
+BUILD_REQUIRES="
+	haiku${secondaryArchSuffix}_devel
+	"
+BUILD_PREREQUIRES="
+	cmd:cmake
+	cmd:g++$secondaryArchSuffix
+	cmd:make
+	"
+
+BUILD()
+{
+	mkdir -p $sourceDir/public.sdk/source
+	ln -sfn $sourceDir2/h $sourceDir/public.sdk/source/h
+	ln -sfn $sourceDir2/vstlib $sourceDir/public.sdk/source/vst2.x
+	
+	cd $sourceDir
+	cmake -DCMAKE_BUILD_TYPE=Release .
+	make
+}
+
+INSTALL()
+{
+	mkdir -p $addOnsDir/media/vstplugins
+	cp libopen303.so $addOnsDir/media/vstplugins/open303
+}
